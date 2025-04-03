@@ -1,3 +1,4 @@
+
 // Cache DOM elements
 const elements = {
   // Containers
@@ -213,7 +214,7 @@ async function handleSignOut() {
 
 // Open auth page in a new tab
 function openAuthPage(type) {
-  const baseUrl = 'https://yourappurl.com/auth';
+  const baseUrl = 'https://meetassist.app/auth';
   const url = `${baseUrl}?action=${type}&source=extension`;
   chrome.tabs.create({ url });
 }
@@ -237,17 +238,17 @@ function stopRecording() {
 
 // Navigation handlers
 function openDashboard() {
-  const dashboardUrl = 'https://yourappurl.com';
+  const dashboardUrl = 'https://meetassist.app/dashboard';
   chrome.tabs.create({ url: dashboardUrl });
 }
 
 function openUpgradePage() {
-  const upgradeUrl = 'https://yourappurl.com/subscription';
+  const upgradeUrl = 'https://meetassist.app/subscription';
   chrome.tabs.create({ url: upgradeUrl });
 }
 
 function openHelpPage() {
-  const helpUrl = 'https://yourappurl.com/help';
+  const helpUrl = 'https://meetassist.app/help';
   chrome.tabs.create({ url: helpUrl });
 }
 

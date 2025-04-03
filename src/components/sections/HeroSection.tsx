@@ -1,8 +1,23 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Bot, FileText, MessageSquare } from "lucide-react";
+import { ArrowRight, Bot, FileText, MessageSquare, Chrome, Video } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function HeroSection() {
+  const [isChrome, setIsChrome] = useState(false);
+
+  useEffect(() => {
+    // Check if browser is Chrome/Chromium-based
+    const isChromeBrowser = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    setIsChrome(isChromeBrowser);
+  }, []);
+
+  const handleInstallExtension = () => {
+    // Chrome Web Store URL - update this with your actual Web Store URL when published
+    const extensionUrl = "https://chrome.google.com/webstore/detail/meetassist-ai-meeting-ass/YOUR_EXTENSION_ID_HERE";
+    window.open(extensionUrl, '_blank');
+  };
+
   return (
     <section className="py-12 md:py-24 lg:py-32">
       <div className="container px-4 md:px-6">
@@ -17,11 +32,15 @@ export function HeroSection() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 animate-fade-in" style={{animationDelay: "0.4s"}}>
-            <Button size="lg" className="bg-meetassist-primary hover:bg-meetassist-secondary">
-              Install Extension <ArrowRight className="ml-2 h-4 w-4" />
+            <Button 
+              size="lg" 
+              className="bg-meetassist-primary hover:bg-meetassist-secondary flex items-center"
+              onClick={handleInstallExtension}
+            >
+              <Chrome className="mr-2 h-5 w-5" /> Install Extension
             </Button>
-            <Button variant="outline" size="lg">
-              Watch Demo
+            <Button variant="outline" size="lg" className="flex items-center">
+              <Video className="mr-2 h-5 w-5" /> Watch Demo
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mt-12 animate-fade-in" style={{animationDelay: "0.6s"}}>
