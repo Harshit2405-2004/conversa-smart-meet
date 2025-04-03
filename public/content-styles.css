@@ -1,0 +1,265 @@
+
+/* MeetAssist Extension Styles */
+:root {
+  --meet-assist-primary: #6366f1;
+  --meet-assist-secondary: #4f46e5;
+  --meet-assist-text: #1f2937;
+  --meet-assist-bg: rgba(255, 255, 255, 0.95);
+  --meet-assist-border: #e5e7eb;
+  --meet-assist-success: #10b981;
+  --meet-assist-warning: #f59e0b;
+  --meet-assist-danger: #ef4444;
+  --meet-assist-shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Main container for MeetAssist panels */
+.meet-assist-container {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  width: 320px;
+  max-height: 70vh;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.meet-assist-container.hidden {
+  transform: translateX(calc(100% + 20px));
+}
+
+/* Authentication message */
+.auth-message {
+  background-color: var(--meet-assist-bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 4px 12px var(--meet-assist-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Panel styles */
+.meet-assist-panel {
+  background-color: var(--meet-assist-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px var(--meet-assist-shadow);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(50vh - 20px);
+  transition: all 0.3s ease;
+}
+
+.meet-assist-panel.hidden {
+  display: none;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--meet-assist-primary);
+  color: white;
+  border-bottom: 1px solid var(--meet-assist-border);
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.panel-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.panel-content {
+  padding: 8px;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: 300px;
+}
+
+/* Transcription panel */
+.meet-assist-transcription {
+  height: auto;
+}
+
+#transcription-content {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--meet-assist-text);
+}
+
+.transcript-segment {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.segment-speaker {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.segment-time {
+  font-size: 11px;
+  color: #666;
+  margin-right: 8px;
+}
+
+.segment-text {
+  margin-top: 2px;
+  padding-left: 12px;
+}
+
+/* Assistant panel */
+.meet-assist-assistant {
+  height: auto;
+}
+
+.assistant-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.assistant-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.user-message {
+  align-self: flex-end;
+  background-color: var(--meet-assist-primary);
+  color: white;
+}
+
+.assistant-message {
+  align-self: flex-start;
+  background-color: #f3f4f6;
+  color: var(--meet-assist-text);
+}
+
+.assistant-typing {
+  padding: 8px 12px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ccc;
+  display: inline-block;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.assistant-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+#assistant-input {
+  flex-grow: 1;
+  border: 1px solid var(--meet-assist-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+/* Button styles */
+.control-button {
+  background-color: white;
+  border: 1px solid var(--meet-assist-border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.control-button.small {
+  padding: 6px 10px;
+}
+
+.control-button.primary {
+  background-color: var(--meet-assist-primary);
+  color: white;
+  border: none;
+}
+
+.control-button.destructive {
+  background-color: var(--meet-assist-danger);
+  color: white;
+  border: none;
+}
+
+.control-button:hover {
+  opacity: 0.9;
+}
+
+/* Toggle button in Google Meet toolbar */
+.meet-assist-button-container {
+  display: flex;
+  align-items: center;
+}
+
+.meet-assist-toggle-button {
+  border: none;
+  background-color: var(--meet-assist-primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 8px;
+  transition: all 0.2s ease;
+}
+
+.meet-assist-toggle-button.active {
+  background-color: var(--meet-assist-success);
+}
+
+.meet-assist-toggle-button:hover {
+  transform: scale(1.05);
+}
+
+/* Icons placeholder (replace with actual icons) */
+.icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}

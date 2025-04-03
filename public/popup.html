@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeetAssist</title>
+  <link href="popup.css" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <img src="icons/icon48.png" alt="MeetAssist Logo" class="logo">
+      <h1>MeetAssist</h1>
+    </header>
+    
+    <div id="login-container" class="section">
+      <h2>Sign in to use MeetAssist</h2>
+      <button id="signin-button" class="button primary">Sign In</button>
+      <button id="signup-button" class="button secondary">Create Account</button>
+    </div>
+    
+    <div id="main-container" class="section" style="display: none;">
+      <div class="user-info">
+        <span id="user-name"></span>
+        <span id="plan-badge"></span>
+      </div>
+      
+      <div class="feature-toggle">
+        <h3>MeetAssist Features</h3>
+        <div class="toggle-item">
+          <label for="transcription-toggle">Real-time Transcription</label>
+          <input type="checkbox" id="transcription-toggle" class="toggle-switch">
+        </div>
+        <div class="toggle-item">
+          <label for="assistant-toggle">AI Assistant</label>
+          <input type="checkbox" id="assistant-toggle" class="toggle-switch">
+        </div>
+        <div class="toggle-item">
+          <label for="summary-toggle">Auto-Summary</label>
+          <input type="checkbox" id="summary-toggle" class="toggle-switch">
+        </div>
+      </div>
+      
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Transcription Minutes:</span>
+          <span id="transcription-minutes" class="stat-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">AI Queries:</span>
+          <span id="ai-queries" class="stat-value">0</span>
+        </div>
+      </div>
+      
+      <button id="open-dashboard" class="button secondary">Open Dashboard</button>
+      <button id="signout-button" class="button tertiary">Sign Out</button>
+    </div>
+    
+    <div id="meeting-status" class="section" style="display: none;">
+      <h3>Active Meeting</h3>
+      <div id="meeting-info">
+        <div class="meeting-detail">
+          <span class="detail-label">Duration:</span>
+          <span id="meeting-duration" class="detail-value">00:00</span>
+        </div>
+        <div class="meeting-detail">
+          <span class="detail-label">Status:</span>
+          <span id="recording-status" class="detail-value">Not Recording</span>
+        </div>
+      </div>
+      <button id="start-recording" class="button primary">Start Recording</button>
+      <button id="stop-recording" class="button destructive" style="display: none;">Stop Recording</button>
+    </div>
+    
+    <footer class="popup-footer">
+      <a href="#" id="upgrade-link">Upgrade Plan</a>
+      <a href="#" id="help-link">Help & Support</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
