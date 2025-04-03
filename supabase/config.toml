@@ -30,3 +30,13 @@ enabled = true
 [edge_functions.google-transcribe]
 
 [edge_functions.vertex-ai-assistant]
+
+[edge_functions.create-subscription]
+
+[edge_functions.check-subscription]
+
+[edge_functions.stripe-webhook]
+verify_jwt = false
+
+[edge_functions.oauth2-token]
+

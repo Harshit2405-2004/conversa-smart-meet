@@ -1,6 +1,34 @@
 
 import { PricingCard } from "@/components/features/PricingCard";
-import { PRICING_PLANS } from "@/lib/mock-data";
+
+const PRICING_PLANS = [
+  {
+    name: "Free",
+    price: "$0",
+    features: [
+      "30 minutes of transcription per month",
+      "30 AI assistant queries per month",
+      "Basic analytics",
+      "Standard support",
+      "Community access"
+    ],
+    highlighted: false,
+    priceId: null // Free plan has no Stripe price ID
+  },
+  {
+    name: "Premium",
+    price: "$9.99",
+    features: [
+      "300 minutes of transcription per month",
+      "Unlimited AI assistant queries",
+      "Advanced analytics & summaries",
+      "Priority support",
+      "Custom AI training options"
+    ],
+    highlighted: true,
+    priceId: "price_1OqXyzXXXXXXXXXXXXXXXXXX" // Replace with actual Stripe price ID
+  }
+];
 
 export function PricingSection() {
   return (
@@ -26,6 +54,7 @@ export function PricingSection() {
               price={plan.price}
               features={plan.features}
               highlighted={plan.highlighted}
+              priceId={plan.priceId}
             />
           ))}
         </div>

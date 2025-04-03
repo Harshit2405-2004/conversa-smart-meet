@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { User, TranscriptSegment, Transcript, ChatMessage, Profile } from '@/types';
@@ -25,6 +24,9 @@ interface AppState {
   setCurrentTranscriptId: (id: string | null) => void;
   fetchChatMessages: (transcriptId: string) => Promise<void>;
   sendChatMessage: (message: string) => Promise<void>;
+
+  // Subscription state
+  checkSubscription: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -32,11 +34,18 @@ export const useStore = create<AppState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  setUser: (user) => set({ 
-    user, 
-    isAuthenticated: !!user,
-    isLoading: false
-  }),
+  setUser: (user) => {
+    set({ 
+      user, 
+      isAuthenticated: !!user,
+      isLoading: false
+    });
+    
+    // If the user is authenticated, check their subscription status
+    if (user) {
+      get().checkSubscription();
+    }
+  },
   logout: async () => {
     await supabase.auth.signOut();
     set({ 
@@ -210,6 +219,33 @@ export const useStore = create<AppState>((set, get) => ({
           user_id: user.id
         }]
       }));
+    }
+  },
+  
+  // Subscription state
+  checkSubscription: async () => {
+    const { user } = get();
+    
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription', {});
+      
+      if (error) {
+        console.error('Error checking subscription:', error);
+        return;
+      }
+      
+      if (data) {
+        set(state => ({
+          user: {
+            ...state.user!,
+            plan: data.plan
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
     }
   }
 }));

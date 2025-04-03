@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, CreditCard } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
 
 export function Header() {
   const { isAuthenticated, user, logout } = useStore();
@@ -22,8 +23,10 @@ export function Header() {
           <div className="w-8 h-8 rounded-full bg-meetassist-primary flex items-center justify-center">
             <span className="text-white font-semibold">M</span>
           </div>
-          <span className="font-bold text-lg">Conversa</span>
-          <span className="text-meetassist-primary font-bold">Meet</span>
+          <Link to="/" className="flex items-center">
+            <span className="font-bold text-lg">Conversa</span>
+            <span className="text-meetassist-primary font-bold">Meet</span>
+          </Link>
         </div>
         
         <div className="flex items-center gap-4">
@@ -58,6 +61,12 @@ export function Header() {
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
+                    <Link to="/subscription">
+                      <DropdownMenuItem>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        <span>Subscription</span>
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>

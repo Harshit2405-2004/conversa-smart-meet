@@ -2,15 +2,66 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useStore } from "@/lib/store";
+import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface PricingCardProps {
   name: string;
   price: string;
   features: string[];
   highlighted?: boolean;
+  priceId?: string; // Stripe Price ID
 }
 
-export function PricingCard({ name, price, features, highlighted = false }: PricingCardProps) {
+export function PricingCard({ name, price, features, highlighted = false, priceId }: PricingCardProps) {
+  const { user } = useAuth();
+  const { isAuthenticated } = useStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubscribe = async () => {
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      navigate('/auth');
+      return;
+    }
+
+    if (!priceId) {
+      // This is for the free plan or a plan without a price ID
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-subscription', {
+        body: { priceId },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.sessionUrl) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.sessionUrl;
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Subscription error",
+        description: error.message || "Failed to initiate subscription process",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className={`w-full ${highlighted ? 'border-meetassist-primary shadow-lg relative' : ''}`}>
       {highlighted && (
@@ -41,8 +92,17 @@ export function PricingCard({ name, price, features, highlighted = false }: Pric
         <Button 
           className={`w-full ${highlighted ? 'bg-meetassist-primary hover:bg-meetassist-secondary' : ''}`}
           variant={highlighted ? "default" : "outline"}
+          onClick={handleSubscribe}
+          disabled={isLoading}
         >
-          {highlighted ? "Upgrade Now" : "Get Started"}
+          {isLoading ? (
+            <span className="flex items-center">
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+              Processing...
+            </span>
+          ) : (
+            highlighted ? "Upgrade Now" : "Get Started"
+          )}
         </Button>
       </CardFooter>
     </Card>
