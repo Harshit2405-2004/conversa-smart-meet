@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -36,7 +35,7 @@ const Index = () => {
             id: profile.id,
             email: profile.email,
             name: profile.name || profile.email.split('@')[0],
-            plan: profile.plan,
+            plan: profile.plan === 'premium' ? 'premium' : 'free',
             remainingTranscription: profile.remaining_transcription,
             remainingAIQueries: profile.remaining_ai_queries
           });
@@ -53,7 +52,6 @@ const Index = () => {
     }
   }, [user, loading, setUser, fetchTranscripts]);
   
-  // Redirect to auth page if hash is #login or #register
   useEffect(() => {
     const checkHash = () => {
       const hash = window.location.hash;

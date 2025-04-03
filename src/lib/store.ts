@@ -159,8 +159,14 @@ export const useStore = create<AppState>((set, get) => ({
       return;
     }
 
+    // Convert the generic sender string to our specific "user" | "ai" type
+    const typedMessages = messages ? messages.map(message => ({
+      ...message,
+      sender: message.sender === 'user' ? 'user' : 'ai' 
+    } as ChatMessage)) : [];
+
     set({ 
-      chatMessages: messages || [],
+      chatMessages: typedMessages,
       currentTranscriptId: transcriptId
     });
   },
@@ -190,7 +196,10 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // Update local state
-    set({ chatMessages: [...chatMessages, userMessage as ChatMessage] });
+    set({ chatMessages: [...chatMessages, {
+      ...userMessage,
+      sender: 'user' as const
+    }] });
 
     // In a real implementation, this would call an AI service
     // For now, mock an AI response after a delay
@@ -221,7 +230,10 @@ export const useStore = create<AppState>((set, get) => ({
 
       // Update local state with AI message
       set(state => ({
-        chatMessages: [...state.chatMessages, aiMessage as ChatMessage]
+        chatMessages: [...state.chatMessages, {
+          ...aiMessage,
+          sender: 'ai' as const
+        }]
       }));
     }, 1500);
   }
