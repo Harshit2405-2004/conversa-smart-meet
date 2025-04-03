@@ -1,8 +1,7 @@
 
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
-import { TranscriptSegment, Transcript, ChatMessage } from '@/types';
+import { User, TranscriptSegment, Transcript, ChatMessage, Profile } from '@/types';
 
 interface AppState {
   // User state
@@ -70,6 +69,11 @@ export const useStore = create<AppState>((set, get) => ({
     
     if (error) {
       console.error('Error fetching transcripts:', error);
+      return;
+    }
+
+    if (!transcripts) {
+      console.error('No transcripts found');
       return;
     }
 
@@ -156,7 +160,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     set({ 
-      chatMessages: messages,
+      chatMessages: messages || [],
       currentTranscriptId: transcriptId
     });
   },
@@ -186,7 +190,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // Update local state
-    set({ chatMessages: [...chatMessages, userMessage] });
+    set({ chatMessages: [...chatMessages, userMessage as ChatMessage] });
 
     // In a real implementation, this would call an AI service
     // For now, mock an AI response after a delay
@@ -217,7 +221,7 @@ export const useStore = create<AppState>((set, get) => ({
 
       // Update local state with AI message
       set(state => ({
-        chatMessages: [...state.chatMessages, aiMessage]
+        chatMessages: [...state.chatMessages, aiMessage as ChatMessage]
       }));
     }, 1500);
   }

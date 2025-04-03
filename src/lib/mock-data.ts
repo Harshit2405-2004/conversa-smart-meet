@@ -1,5 +1,5 @@
 
-import { Transcript } from "./store";
+import { Transcript, TranscriptSegment } from "@/types";
 
 export const MOCK_TRANSCRIPTS: Transcript[] = [
   {

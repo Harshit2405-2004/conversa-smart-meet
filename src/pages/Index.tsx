@@ -11,6 +11,7 @@ import { CTASection } from "@/components/sections/CTASection";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
