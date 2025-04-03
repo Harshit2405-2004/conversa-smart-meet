@@ -9,7 +9,136 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          id: string
+          sender: string
+          text: string
+          timestamp: string
+          transcript_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          sender: string
+          text: string
+          timestamp?: string
+          transcript_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          sender?: string
+          text?: string
+          timestamp?: string
+          transcript_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_transcript_id_fkey"
+            columns: ["transcript_id"]
+            isOneToOne: false
+            referencedRelation: "transcripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          plan: string
+          remaining_ai_queries: number
+          remaining_transcription: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          plan?: string
+          remaining_ai_queries?: number
+          remaining_transcription?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          plan?: string
+          remaining_ai_queries?: number
+          remaining_transcription?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transcript_segments: {
+        Row: {
+          created_at: string
+          id: string
+          speaker: string
+          text: string
+          timestamp: string
+          transcript_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          speaker: string
+          text: string
+          timestamp: string
+          transcript_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          speaker?: string
+          text?: string
+          timestamp?: string
+          transcript_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcript_segments_transcript_id_fkey"
+            columns: ["transcript_id"]
+            isOneToOne: false
+            referencedRelation: "transcripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transcripts: {
+        Row: {
+          created_at: string
+          date: string
+          duration: number
+          id: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          duration?: number
+          id?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          duration?: number
+          id?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
