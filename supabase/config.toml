@@ -18,14 +18,10 @@ api_url = "http://localhost"
 enabled = true
 port = 54324
 
-[auth]
+[storage]
 enabled = true
-port = 54325
 
 [realtime]
-enabled = true
-
-[storage]
 enabled = true
 
 [edge_functions]

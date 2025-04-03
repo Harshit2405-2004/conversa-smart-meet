@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { audioRecorder, blobToBase64 } from "@/lib/audio-utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export function TranscriptionPanel() {
   const { toast } = useToast();
@@ -26,7 +26,6 @@ export function TranscriptionPanel() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Handle recording state changes
   useEffect(() => {
     if (isTranscribing) {
       startRecording();
@@ -92,10 +91,8 @@ export function TranscriptionPanel() {
     setIsProcessing(true);
     
     try {
-      // Convert the audio blob to base64
       const base64Audio = await blobToBase64(recordedBlob);
       
-      // Call the Google Speech-to-Text edge function
       const { data, error } = await supabase.functions.invoke('google-transcribe', {
         body: { 
           audioData: base64Audio,
@@ -111,12 +108,9 @@ export function TranscriptionPanel() {
         throw new Error(data.error);
       }
       
-      // Update the remaining transcription minutes in the user state
       if (data.remaining_minutes !== undefined && user) {
-        // This will be handled by the store
       }
       
-      // Update the current transcript
       if (data.transcript_id) {
         setCurrentTranscriptId(data.transcript_id);
         
