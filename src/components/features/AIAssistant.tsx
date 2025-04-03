@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, User, AlertCircle } from "lucide-react";
+import { Send, Bot, User, AlertCircle, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
@@ -14,6 +14,7 @@ export function AIAssistant() {
   const { user, chatMessages, sendChatMessage, currentTranscriptId } = useStore();
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +35,8 @@ export function AIAssistant() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const scrollArea = document.querySelector('.messages-scroll-area');
-    if (scrollArea) {
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current;
       scrollArea.scrollTop = scrollArea.scrollHeight;
     }
   }, [chatMessages]);
@@ -52,6 +53,8 @@ export function AIAssistant() {
     return [
       "Create a summary of this meeting",
       "What are the action items from this meeting?",
+      "Identify the key decisions made",
+      "Who were the main participants?",
       "Help me draft a follow-up email"
     ];
   };
@@ -76,7 +79,7 @@ export function AIAssistant() {
           <div>
             <CardTitle>AI Assistant</CardTitle>
             <CardDescription>
-              Ask questions about your meeting or get help
+              Powered by Google Vertex AI
             </CardDescription>
           </div>
           {user && (
@@ -87,7 +90,7 @@ export function AIAssistant() {
         </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-auto">
-        <ScrollArea className="h-[250px] pr-4 messages-scroll-area">
+        <ScrollArea className="h-[250px] pr-4 messages-scroll-area" ref={scrollAreaRef}>
           {chatMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
               <Bot size={32} className="text-meetassist-primary" />
@@ -157,9 +160,18 @@ export function AIAssistant() {
                           : "bg-muted"
                       }`}
                     >
-                      <p className="text-sm">
-                        {message.id === 'loading' ? 'Thinking...' : message.text}
+                      <p className="text-sm whitespace-pre-line">
+                        {message.id === 'loading' ? 'Analyzing meeting content...' : message.text}
                       </p>
+                      
+                      {/* Display sentiment information if available */}
+                      {message.sender === 'ai' && message.text.includes('Overall meeting sentiment') && (
+                        <div className="mt-2 pt-2 border-t border-muted-foreground/20">
+                          <p className="text-xs text-muted-foreground">
+                            Sentiment analysis provided by Google Natural Language API
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -175,10 +187,18 @@ export function AIAssistant() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-grow"
-            disabled={!currentTranscriptId}
+            disabled={!currentTranscriptId || chatMessages.some(msg => msg.id === 'loading')}
           />
-          <Button type="submit" size="icon" disabled={!inputValue.trim() || !currentTranscriptId}>
-            <Send size={18} />
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={!inputValue.trim() || !currentTranscriptId || chatMessages.some(msg => msg.id === 'loading')}
+          >
+            {chatMessages.some(msg => msg.id === 'loading') ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Send size={18} />
+            )}
             <span className="sr-only">Send message</span>
           </Button>
         </form>

@@ -1,7 +1,7 @@
+
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { User, TranscriptSegment, Transcript, ChatMessage, Profile } from '@/types';
-import { useToast } from '@/hooks/use-toast';
 
 interface AppState {
   // User state
@@ -17,7 +17,7 @@ interface AppState {
   savedTranscripts: Transcript[];
   fetchTranscripts: () => Promise<void>;
   startTranscription: () => void;
-  stopTranscription: () => Promise<void>;
+  stopTranscription: () => void;
   
   // Chat state
   chatMessages: ChatMessage[];
@@ -89,58 +89,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
   startTranscription: () => {
     set({ isTranscribing: true });
-    // In a real implementation this would connect to the Google Meet API
   },
-  stopTranscription: async () => {
-    const { currentTranscript } = get();
-    
-    // Create a new transcript in the database
-    const { data: transcript, error } = await supabase
-      .from('transcripts')
-      .insert({
-        title: `Meeting on ${new Date().toLocaleString()}`,
-        duration: 15 // Mock duration
-      })
-      .select()
-      .single();
-    
-    if (error || !transcript) {
-      console.error('Error creating transcript:', error);
-      return;
-    }
-
-    // Create transcript segments
-    const mockSegments = [
-      { speaker: 'John Doe', text: 'Hello everyone, thanks for joining today.', timestamp: '00:00' },
-      { speaker: 'Jane Smith', text: 'Good to be here. I have some updates on the project.', timestamp: '00:05' },
-      { speaker: 'Alex Johnson', text: 'I have a question about the timeline.', timestamp: '00:15' },
-      { speaker: 'John Doe', text: 'Sure, let me explain our current roadmap.', timestamp: '00:20' }
-    ];
-    
-    const segmentsToInsert = mockSegments.map(segment => ({
-      transcript_id: transcript.id,
-      speaker: segment.speaker,
-      text: segment.text,
-      timestamp: segment.timestamp
-    }));
-
-    const { error: segmentsError } = await supabase
-      .from('transcript_segments')
-      .insert(segmentsToInsert);
-    
-    if (segmentsError) {
-      console.error('Error creating transcript segments:', segmentsError);
-    }
-
-    // Update local state
-    set({ 
-      isTranscribing: false,
-      currentTranscript: mockSegments,
-      currentTranscriptId: transcript.id
-    });
-
-    // Refresh the transcripts list
-    get().fetchTranscripts();
+  stopTranscription: () => {
+    set({ isTranscribing: false });
   },
   
   // Chat state
@@ -159,11 +110,11 @@ export const useStore = create<AppState>((set, get) => ({
       return;
     }
 
-    // Convert the generic sender string to our specific "user" | "ai" type
+    // Convert the sender string to our specific "user" | "ai" type
     const typedMessages = messages ? messages.map(message => ({
       ...message,
-      sender: message.sender === 'user' ? 'user' : 'ai' 
-    } as ChatMessage)) : [];
+      sender: message.sender === 'user' ? 'user' as const : 'ai' as const
+    })) : [];
 
     set({ 
       chatMessages: typedMessages,
@@ -214,8 +165,8 @@ export const useStore = create<AppState>((set, get) => ({
         }]
       }));
 
-      // Call the Supabase edge function with the user's query and transcript ID
-      const { data, error } = await supabase.functions.invoke('process-assistant-query', {
+      // Call the Google Vertex AI edge function
+      const { data, error } = await supabase.functions.invoke('vertex-ai-assistant', {
         body: { 
           query: message, 
           transcriptId: currentTranscriptId 
