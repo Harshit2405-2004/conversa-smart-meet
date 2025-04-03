@@ -1,7 +1,7 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { User, TranscriptSegment, Transcript, ChatMessage, Profile } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppState {
   // User state
@@ -201,40 +201,64 @@ export const useStore = create<AppState>((set, get) => ({
       sender: 'user' as const
     }] });
 
-    // In a real implementation, this would call an AI service
-    // For now, mock an AI response after a delay
-    setTimeout(async () => {
-      const responses = [
-        "I've analyzed the transcript and found 3 key action items that were mentioned.",
-        "Based on the discussion, the main points were about project timelines and resource allocation.",
-        "The meeting participants agreed to reconvene next week to finalize the decision.",
-        "I can help you draft a follow-up email with the meeting highlights if you'd like."
-      ];
-      
-      // Add AI message to database
-      const { data: aiMessage, error: aiMessageError } = await supabase
-        .from('chat_messages')
-        .insert({
-          user_id: user.id,
-          transcript_id: currentTranscriptId,
-          text: responses[Math.floor(Math.random() * responses.length)],
-          sender: 'ai'
-        })
-        .select()
-        .single();
-
-      if (aiMessageError || !aiMessage) {
-        console.error('Error sending AI message:', aiMessageError);
-        return;
-      }
-
-      // Update local state with AI message
+    try {
+      // Show loading state while waiting for AI response
       set(state => ({
         chatMessages: [...state.chatMessages, {
-          ...aiMessage,
-          sender: 'ai' as const
+          id: 'loading',
+          text: '...',
+          sender: 'ai' as const,
+          timestamp: new Date().toISOString(),
+          transcript_id: currentTranscriptId,
+          user_id: user.id
         }]
       }));
-    }, 1500);
+
+      // Call the Supabase edge function with the user's query and transcript ID
+      const { data, error } = await supabase.functions.invoke('process-assistant-query', {
+        body: { 
+          query: message, 
+          transcriptId: currentTranscriptId 
+        }
+      });
+
+      if (error) {
+        throw new Error(`Error processing query: ${error.message}`);
+      }
+
+      // Remove the loading message
+      set(state => ({
+        chatMessages: state.chatMessages.filter(msg => msg.id !== 'loading')
+      }));
+
+      // Add the AI response to the chat messages
+      if (data?.message) {
+        set(state => ({
+          chatMessages: [...state.chatMessages, {
+            ...data.message,
+            sender: 'ai' as const
+          }]
+        }));
+      }
+    } catch (error) {
+      console.error('Error processing AI query:', error);
+      
+      // Remove the loading message
+      set(state => ({
+        chatMessages: state.chatMessages.filter(msg => msg.id !== 'loading')
+      }));
+
+      // Add error message
+      set(state => ({
+        chatMessages: [...state.chatMessages, {
+          id: `error-${Date.now()}`,
+          text: 'Sorry, I had trouble processing your request. Please try again.',
+          sender: 'ai' as const,
+          timestamp: new Date().toISOString(),
+          transcript_id: currentTranscriptId,
+          user_id: user.id
+        }]
+      }));
+    }
   }
 }));

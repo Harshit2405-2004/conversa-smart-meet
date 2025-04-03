@@ -1,23 +1,72 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
 
 export function AIAssistant() {
   const [inputValue, setInputValue] = useState("");
-  const { user, chatMessages, sendChatMessage } = useStore();
+  const { user, chatMessages, sendChatMessage, currentTranscriptId } = useStore();
+  const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
     
+    if (!currentTranscriptId) {
+      toast({
+        title: "No transcript selected",
+        description: "Please select a transcript before sending a message.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     sendChatMessage(inputValue);
     setInputValue("");
+  };
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    const scrollArea = document.querySelector('.messages-scroll-area');
+    if (scrollArea) {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [chatMessages]);
+  
+  const getSuggestedQueries = () => {
+    if (!currentTranscriptId) {
+      return [
+        "Select a transcript to chat about it",
+        "I can help analyze your meetings",
+        "Try selecting a transcript from the History tab"
+      ];
+    }
+    
+    return [
+      "Create a summary of this meeting",
+      "What are the action items from this meeting?",
+      "Help me draft a follow-up email"
+    ];
+  };
+
+  const handleSuggestedQuery = (query: string) => {
+    if (!currentTranscriptId) {
+      toast({
+        title: "No transcript selected",
+        description: "Please select a transcript first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    sendChatMessage(query);
   };
   
   return (
@@ -38,7 +87,7 @@ export function AIAssistant() {
         </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-auto">
-        <ScrollArea className="h-[250px] pr-4">
+        <ScrollArea className="h-[250px] pr-4 messages-scroll-area">
           {chatMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
               <Bot size={32} className="text-meetassist-primary" />
@@ -50,30 +99,18 @@ export function AIAssistant() {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-2 w-full max-w-xs mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-left justify-start h-auto py-2"
-                  onClick={() => sendChatMessage("Create a summary of this meeting")}
-                >
-                  Create a summary of this meeting
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-left justify-start h-auto py-2"
-                  onClick={() => sendChatMessage("What are the action items from this meeting?")}
-                >
-                  What are the action items?
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-left justify-start h-auto py-2"
-                  onClick={() => sendChatMessage("Help me draft a follow-up email")}
-                >
-                  Help me draft a follow-up email
-                </Button>
+                {getSuggestedQueries().map((query, index) => (
+                  <Button 
+                    key={index}
+                    variant="outline" 
+                    size="sm" 
+                    className="text-left justify-start h-auto py-2"
+                    onClick={() => handleSuggestedQuery(query)}
+                    disabled={!currentTranscriptId}
+                  >
+                    {query}
+                  </Button>
+                ))}
               </div>
             </div>
           ) : (
@@ -100,17 +137,29 @@ export function AIAssistant() {
                       {message.sender === "user" ? (
                         <User size={18} />
                       ) : (
-                        <Bot size={18} />
+                        message.id === 'loading' ? (
+                          <div className="animate-spin"><Bot size={18} /></div>
+                        ) : message.text.includes("Sorry, I had trouble") ? (
+                          <AlertCircle size={18} />
+                        ) : (
+                          <Bot size={18} />
+                        )
                       )}
                     </div>
                     <div
                       className={`p-3 rounded-lg ${
                         message.sender === "user"
                           ? "bg-meetassist-primary text-primary-foreground"
+                          : message.id === 'loading'
+                          ? "bg-muted animate-pulse"
+                          : message.text.includes("Sorry, I had trouble")
+                          ? "bg-muted/80 text-destructive"
                           : "bg-muted"
                       }`}
                     >
-                      <p className="text-sm">{message.text}</p>
+                      <p className="text-sm">
+                        {message.id === 'loading' ? 'Thinking...' : message.text}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -122,12 +171,13 @@ export function AIAssistant() {
       <CardFooter>
         <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
           <Input
-            placeholder="Ask about your meeting..."
+            placeholder={currentTranscriptId ? "Ask about your meeting..." : "Select a transcript first"}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-grow"
+            disabled={!currentTranscriptId}
           />
-          <Button type="submit" size="icon" disabled={!inputValue.trim()}>
+          <Button type="submit" size="icon" disabled={!inputValue.trim() || !currentTranscriptId}>
             <Send size={18} />
             <span className="sr-only">Send message</span>
           </Button>
