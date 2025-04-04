@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { User, TranscriptSegment, Transcript, ChatMessage, Profile } from '@/types';
@@ -91,7 +92,10 @@ export const useStore = create<AppState>((set, get) => ({
       title: transcript.title,
       date: transcript.date,
       duration: transcript.duration,
-      content: transcript.transcript_segments
+      content: transcript.transcript_segments.map(segment => ({
+        ...segment,
+        transcript_id: transcript.id // Add transcript_id to each segment
+      }))
     }));
     
     set({ savedTranscripts: formattedTranscripts });

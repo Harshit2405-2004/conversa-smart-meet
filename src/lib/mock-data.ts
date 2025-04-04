@@ -8,11 +8,11 @@ export const MOCK_TRANSCRIPTS: Transcript[] = [
     date: new Date('2023-11-10T10:00:00').toISOString(),
     duration: 25,
     content: [
-      { speaker: 'Sarah (Manager)', text: 'Good morning everyone! Let\'s start with updates from the dev team.', timestamp: '00:00' },
-      { speaker: 'Mike (Developer)', text: 'We completed the authentication module yesterday and pushed it to staging.', timestamp: '00:12' },
-      { speaker: 'Jessica (UX)', text: 'I\'ve finished the wireframes for the new dashboard. I\'ll share them after the meeting.', timestamp: '00:35' },
-      { speaker: 'Sarah (Manager)', text: 'Great progress! Any blockers we should address?', timestamp: '01:02' },
-      { speaker: 'Mike (Developer)', text: 'We might need more time for testing the payment integration.', timestamp: '01:18' },
+      { speaker: 'Sarah (Manager)', text: 'Good morning everyone! Let\'s start with updates from the dev team.', timestamp: '00:00', transcript_id: '1' },
+      { speaker: 'Mike (Developer)', text: 'We completed the authentication module yesterday and pushed it to staging.', timestamp: '00:12', transcript_id: '1' },
+      { speaker: 'Jessica (UX)', text: 'I\'ve finished the wireframes for the new dashboard. I\'ll share them after the meeting.', timestamp: '00:35', transcript_id: '1' },
+      { speaker: 'Sarah (Manager)', text: 'Great progress! Any blockers we should address?', timestamp: '01:02', transcript_id: '1' },
+      { speaker: 'Mike (Developer)', text: 'We might need more time for testing the payment integration.', timestamp: '01:18', transcript_id: '1' },
     ]
   },
   {
@@ -21,11 +21,11 @@ export const MOCK_TRANSCRIPTS: Transcript[] = [
     date: new Date('2023-11-08T14:30:00').toISOString(),
     duration: 45,
     content: [
-      { speaker: 'John (Sales)', text: 'Thank you for joining us today. We\'re excited to show you our solution.', timestamp: '00:00' },
-      { speaker: 'Client', text: 'We\'re looking forward to it. Our main concern is scalability.', timestamp: '00:22' },
-      { speaker: 'Linda (Product)', text: 'Our platform is built on a microservices architecture that can scale horizontally.', timestamp: '00:40' },
-      { speaker: 'Client', text: 'That sounds promising. What about data security?', timestamp: '01:15' },
-      { speaker: 'Emma (Security)', text: 'We implement end-to-end encryption and comply with GDPR and CCPA requirements.', timestamp: '01:30' },
+      { speaker: 'John (Sales)', text: 'Thank you for joining us today. We\'re excited to show you our solution.', timestamp: '00:00', transcript_id: '2' },
+      { speaker: 'Client', text: 'We\'re looking forward to it. Our main concern is scalability.', timestamp: '00:22', transcript_id: '2' },
+      { speaker: 'Linda (Product)', text: 'Our platform is built on a microservices architecture that can scale horizontally.', timestamp: '00:40', transcript_id: '2' },
+      { speaker: 'Client', text: 'That sounds promising. What about data security?', timestamp: '01:15', transcript_id: '2' },
+      { speaker: 'Emma (Security)', text: 'We implement end-to-end encryption and comply with GDPR and CCPA requirements.', timestamp: '01:30', transcript_id: '2' },
     ]
   },
   {
@@ -34,11 +34,11 @@ export const MOCK_TRANSCRIPTS: Transcript[] = [
     date: new Date('2023-11-05T09:00:00').toISOString(),
     duration: 60,
     content: [
-      { speaker: 'Director', text: 'Let\'s discuss our roadmap for Q1 next year.', timestamp: '00:00' },
-      { speaker: 'Product Manager', text: 'We should prioritize the AI features we discussed last month.', timestamp: '00:15' },
-      { speaker: 'UX Lead', text: 'The user research indicates strong interest in voice commands.', timestamp: '00:45' },
-      { speaker: 'CTO', text: 'I agree, but we need to consider the technical challenges.', timestamp: '01:10' },
-      { speaker: 'Director', text: 'Let\'s allocate more resources to the AI team then.', timestamp: '01:30' },
+      { speaker: 'Director', text: 'Let\'s discuss our roadmap for Q1 next year.', timestamp: '00:00', transcript_id: '3' },
+      { speaker: 'Product Manager', text: 'We should prioritize the AI features we discussed last month.', timestamp: '00:15', transcript_id: '3' },
+      { speaker: 'UX Lead', text: 'The user research indicates strong interest in voice commands.', timestamp: '00:45', transcript_id: '3' },
+      { speaker: 'CTO', text: 'I agree, but we need to consider the technical challenges.', timestamp: '01:10', transcript_id: '3' },
+      { speaker: 'Director', text: 'Let\'s allocate more resources to the AI team then.', timestamp: '01:30', transcript_id: '3' },
     ]
   }
 ];
