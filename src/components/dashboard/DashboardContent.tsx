@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TranscriptionPanel } from "@/components/features/TranscriptionPanel";
 import { AIAssistant } from "@/components/features/AIAssistant";
 import { TranscriptList } from "@/components/features/TranscriptList";
+import { AnalyticsDashboard } from "@/components/features/AnalyticsDashboard";
+import { BarChart2 } from "lucide-react";
 
 export function DashboardContent() {
   return (
@@ -14,6 +16,10 @@ export function DashboardContent() {
           <TabsTrigger value="transcribe">Transcribe</TabsTrigger>
           <TabsTrigger value="assistant">AI Assistant</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1">
+            <BarChart2 size={16} />
+            Analytics
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="transcribe" className="pt-4">
           <div className="space-y-6">
@@ -31,6 +37,9 @@ export function DashboardContent() {
         </TabsContent>
         <TabsContent value="history" className="pt-4">
           <TranscriptList />
+        </TabsContent>
+        <TabsContent value="analytics" className="pt-4">
+          <AnalyticsDashboard />
         </TabsContent>
       </Tabs>
     </div>

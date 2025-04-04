@@ -1,13 +1,46 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MicOff, Download, Copy, Loader2 } from "lucide-react";
+import { Mic, MicOff, Download, Copy, Loader2, Globe, ChevronDown, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { audioRecorder, blobToBase64 } from "@/lib/audio-utils";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// Supported languages
+const LANGUAGES = [
+  { code: 'en-US', name: 'English (US)' },
+  { code: 'es-ES', name: 'Spanish' },
+  { code: 'fr-FR', name: 'French' },
+  { code: 'de-DE', name: 'German' },
+  { code: 'ja-JP', name: 'Japanese' },
+  { code: 'zh-CN', name: 'Chinese (Simplified)' },
+  { code: 'pt-BR', name: 'Portuguese (Brazil)' },
+  { code: 'it-IT', name: 'Italian' },
+  { code: 'ru-RU', name: 'Russian' },
+  { code: 'hi-IN', name: 'Hindi' }
+];
+
+// Collaboration tools
+const EXPORT_TOOLS = [
+  { id: 'googleDocs', name: 'Google Docs' },
+  { id: 'notion', name: 'Notion' }
+];
 
 export function TranscriptionPanel() {
   const { toast } = useToast();
@@ -25,6 +58,10 @@ export function TranscriptionPanel() {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState({ code: 'en-US', name: 'English (US)' });
+  const [exporting, setExporting] = useState(false);
+  const [isListeningForVoiceCommands, setIsListeningForVoiceCommands] = useState(false);
+  const speechRecognitionRef = useRef<any>(null);
   
   useEffect(() => {
     if (isTranscribing) {
@@ -33,6 +70,95 @@ export function TranscriptionPanel() {
       processRecording();
     }
   }, [isTranscribing]);
+  
+  // Initialize voice command recognition
+  useEffect(() => {
+    // Check if the browser supports speech recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      speechRecognitionRef.current = new SpeechRecognition();
+      
+      speechRecognitionRef.current.continuous = true;
+      speechRecognitionRef.current.interimResults = false;
+      
+      speechRecognitionRef.current.onresult = (event: any) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            const command = event.results[i][0].transcript.trim().toLowerCase();
+            handleVoiceCommand(command);
+          }
+        }
+      };
+      
+      speechRecognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          // Restart listening if no speech was detected
+          if (isListeningForVoiceCommands) {
+            speechRecognitionRef.current.start();
+          }
+        } else {
+          setIsListeningForVoiceCommands(false);
+          toast({
+            title: "Voice Command Error",
+            description: `Error: ${event.error}. Voice commands have been disabled.`,
+            variant: "destructive"
+          });
+        }
+      };
+    }
+    
+    return () => {
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.stop();
+        } catch (e) {
+          // Ignore errors from stopping a non-started recognition
+        }
+      }
+    };
+  }, []);
+  
+  // Handle changes to voice command listening state
+  useEffect(() => {
+    if (speechRecognitionRef.current) {
+      if (isListeningForVoiceCommands) {
+        try {
+          speechRecognitionRef.current.start();
+          toast({
+            title: "Voice Commands Activated",
+            description: "Try saying: 'start recording', 'stop recording', 'download transcript', or 'copy transcript'",
+          });
+        } catch (e) {
+          console.error('Error starting speech recognition:', e);
+        }
+      } else {
+        try {
+          speechRecognitionRef.current.stop();
+        } catch (e) {
+          // Ignore errors from stopping a non-started recognition
+        }
+      }
+    }
+  }, [isListeningForVoiceCommands]);
+  
+  const handleVoiceCommand = (command: string) => {
+    console.log('Voice command detected:', command);
+    
+    if (command.includes('start') && command.includes('recording')) {
+      startTranscription();
+    } else if (command.includes('stop') && command.includes('recording')) {
+      stopTranscription();
+    } else if (command.includes('download') && command.includes('transcript')) {
+      handleDownload();
+    } else if (command.includes('copy') && command.includes('transcript')) {
+      handleCopy();
+    } else if ((command.includes('share') || command.includes('export')) && command.includes('google') && command.includes('docs')) {
+      handleExport('googleDocs');
+    } else if ((command.includes('share') || command.includes('export')) && command.includes('notion')) {
+      handleExport('notion');
+    }
+  };
 
   const startRecording = () => {
     setErrorMessage(null);
@@ -93,10 +219,28 @@ export function TranscriptionPanel() {
     try {
       const base64Audio = await blobToBase64(recordedBlob);
       
-      const { data, error } = await supabase.functions.invoke('google-transcribe', {
+      // Log usage for analytics
+      try {
+        await supabase.functions.invoke('analytics-insights', {
+          body: { 
+            event: {
+              type: 'transcription',
+              language: selectedLanguage.code,
+              duration: recordingDuration
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error logging analytics:', error);
+        // Continue even if analytics logging fails
+      }
+      
+      // Use multi-language transcription endpoint
+      const { data, error } = await supabase.functions.invoke('multi-language-transcribe', {
         body: { 
           audioData: base64Audio,
-          recordingDuration
+          recordingDuration,
+          languageCode: selectedLanguage.code
         }
       });
       
@@ -109,6 +253,7 @@ export function TranscriptionPanel() {
       }
       
       if (data.remaining_minutes !== undefined && user) {
+        // Update user data in store if needed
       }
       
       if (data.transcript_id) {
@@ -116,7 +261,7 @@ export function TranscriptionPanel() {
         
         toast({
           title: "Transcription Complete",
-          description: `Used ${data.minutes_used} minute${data.minutes_used === 1 ? '' : 's'} of transcription.`,
+          description: `Used ${data.minutes_used} minute${data.minutes_used === 1 ? '' : 's'} of transcription in ${selectedLanguage.name}.`,
         });
       }
     } catch (error) {
@@ -168,6 +313,60 @@ export function TranscriptionPanel() {
       description: "Your transcript file has been downloaded."
     });
   };
+  
+  const handleExport = async (tool: string) => {
+    if (!currentTranscript.length) {
+      toast({
+        title: "No Transcript Available",
+        description: "Please create a transcript before exporting.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setExporting(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('meeting-export', {
+        body: { 
+          transcriptId: currentTranscript[0]?.transcript_id,
+          exportType: tool,
+          addSummary: true
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Export error: ${error.message}`);
+      }
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      toast({
+        title: "Export Successful",
+        description: data.message,
+      });
+      
+      // Open the exported document if a URL is provided
+      if (data.exportUrl) {
+        window.open(data.exportUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error exporting transcript:', error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "An unexpected error occurred while exporting.",
+        variant: "destructive"
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+  
+  const toggleVoiceCommands = () => {
+    setIsListeningForVoiceCommands(!isListeningForVoiceCommands);
+  };
 
   return (
     <Card className="w-full">
@@ -177,7 +376,7 @@ export function TranscriptionPanel() {
             <CardTitle>Live Transcription</CardTitle>
             <CardDescription>
               {isTranscribing 
-                ? "Transcribing your meeting in real-time" 
+                ? `Transcribing your meeting in ${selectedLanguage.name}` 
                 : isProcessing
                   ? "Processing your recording..."
                   : "Start transcription to capture your meeting"}
@@ -190,6 +389,27 @@ export function TranscriptionPanel() {
                 {user.remainingTranscription} mins left
               </Badge>
             )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="ml-2">
+                  <Globe size={16} className="mr-2" />
+                  {selectedLanguage.name}
+                  <ChevronDown size={16} className="ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {LANGUAGES.map((language) => (
+                  <DropdownMenuItem 
+                    key={language.code} 
+                    onClick={() => setSelectedLanguage(language)}
+                  >
+                    {language.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <Button 
               onClick={isTranscribing ? stopTranscription : startTranscription}
               variant={isTranscribing ? "destructive" : "default"}
@@ -221,7 +441,7 @@ export function TranscriptionPanel() {
           <div className="min-h-[300px] p-4 rounded-lg border bg-accent/50">
             <div className="animate-pulse-light flex items-center space-x-2 mb-4">
               <div className="h-3 w-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-medium">Recording...</span>
+              <span className="text-sm font-medium">Recording in {selectedLanguage.name}...</span>
             </div>
             
             <p className="text-sm text-muted-foreground typing-indicator">
@@ -268,29 +488,82 @@ export function TranscriptionPanel() {
                 No transcription available yet.<br />
                 Click "Start" to begin transcribing your meeting.
               </p>
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={toggleVoiceCommands}
+                  className={isListeningForVoiceCommands ? "border-green-500 text-green-500" : ""}
+                >
+                  {isListeningForVoiceCommands ? "Voice Commands On" : "Enable Voice Commands"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          disabled={currentTranscript.length === 0 || isProcessing}
-        >
-          <Copy size={16} className="mr-2" />
-          {copied ? "Copied!" : "Copy"}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownload}
-          disabled={currentTranscript.length === 0 || isProcessing}
-        >
-          <Download size={16} className="mr-2" />
-          Download
-        </Button>
+      <CardFooter className="flex justify-between">
+        <div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleVoiceCommands}
+            className={isListeningForVoiceCommands ? "border-green-500 text-green-500" : ""}
+          >
+            {isListeningForVoiceCommands ? "Voice Commands On" : "Voice Commands"}
+          </Button>
+        </div>
+        <div className="flex space-x-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentTranscript.length === 0 || isProcessing || exporting}
+              >
+                <Share2 size={16} className="mr-2" />
+                Export
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48">
+              <div className="grid gap-2">
+                <h4 className="font-medium text-sm">Export to</h4>
+                {EXPORT_TOOLS.map((tool) => (
+                  <Button
+                    key={tool.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(tool.id)}
+                    disabled={exporting}
+                    className="justify-start"
+                  >
+                    {tool.name}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            disabled={currentTranscript.length === 0 || isProcessing}
+          >
+            <Copy size={16} className="mr-2" />
+            {copied ? "Copied!" : "Copy"}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={currentTranscript.length === 0 || isProcessing}
+          >
+            <Download size={16} className="mr-2" />
+            Download
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

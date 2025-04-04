@@ -22,10 +22,13 @@
     "identity",
     "tabs",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "notifications"
   ],
   "host_permissions": [
-    "https://meet.google.com/*"
+    "https://meet.google.com/*",
+    "https://docs.google.com/*",
+    "https://www.notion.so/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -47,7 +50,9 @@
     "client_id": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile"
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/docs",
+      "https://www.googleapis.com/auth/drive.file"
     ]
   },
   "content_security_policy": {

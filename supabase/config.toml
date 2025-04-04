@@ -40,3 +40,10 @@ verify_jwt = false
 
 [edge_functions.oauth2-token]
 
+[edge_functions.multi-language-transcribe]
+
+[edge_functions.analytics-insights]
+
+[edge_functions.meeting-export]
+
+[edge_functions.compatibility-check]
