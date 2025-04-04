@@ -12,6 +12,7 @@ export interface TranscriptSegment {
   speaker: string;
   text: string;
   timestamp: string;
+  transcript_id?: string; // Made optional but included in the type
 }
 
 export interface Transcript {

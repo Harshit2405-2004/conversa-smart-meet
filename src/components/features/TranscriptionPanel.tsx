@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,55 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognition;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
 
 // Supported languages
 const LANGUAGES = [
@@ -61,7 +109,7 @@ export function TranscriptionPanel() {
   const [selectedLanguage, setSelectedLanguage] = useState({ code: 'en-US', name: 'English (US)' });
   const [exporting, setExporting] = useState(false);
   const [isListeningForVoiceCommands, setIsListeningForVoiceCommands] = useState(false);
-  const speechRecognitionRef = useRef<any>(null);
+  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
   
   useEffect(() => {
     if (isTranscribing) {
@@ -74,38 +122,41 @@ export function TranscriptionPanel() {
   // Initialize voice command recognition
   useEffect(() => {
     // Check if the browser supports speech recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-      speechRecognitionRef.current = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognitionAPI) {
+      speechRecognitionRef.current = new SpeechRecognitionAPI();
       
-      speechRecognitionRef.current.continuous = true;
-      speechRecognitionRef.current.interimResults = false;
-      
-      speechRecognitionRef.current.onresult = (event: any) => {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            const command = event.results[i][0].transcript.trim().toLowerCase();
-            handleVoiceCommand(command);
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.continuous = true;
+        speechRecognitionRef.current.interimResults = false;
+        
+        speechRecognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              const command = event.results[i][0].transcript.trim().toLowerCase();
+              handleVoiceCommand(command);
+            }
           }
-        }
-      };
-      
-      speechRecognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'no-speech') {
-          // Restart listening if no speech was detected
-          if (isListeningForVoiceCommands) {
-            speechRecognitionRef.current.start();
+        };
+        
+        speechRecognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.error('Speech recognition error:', event.error);
+          if (event.error === 'no-speech') {
+            // Restart listening if no speech was detected
+            if (isListeningForVoiceCommands && speechRecognitionRef.current) {
+              speechRecognitionRef.current.start();
+            }
+          } else {
+            setIsListeningForVoiceCommands(false);
+            toast({
+              title: "Voice Command Error",
+              description: `Error: ${event.error}. Voice commands have been disabled.`,
+              variant: "destructive"
+            });
           }
-        } else {
-          setIsListeningForVoiceCommands(false);
-          toast({
-            title: "Voice Command Error",
-            description: `Error: ${event.error}. Voice commands have been disabled.`,
-            variant: "destructive"
-          });
-        }
-      };
+        };
+      }
     }
     
     return () => {
@@ -327,9 +378,17 @@ export function TranscriptionPanel() {
     setExporting(true);
     
     try {
+      // Find the transcript ID from the first segment
+      const transcriptId = currentTranscript[0]?.transcript_id || 
+                         (currentTranscript[0] as any)?.transcript_id;
+      
+      if (!transcriptId) {
+        throw new Error("No transcript ID found in current transcript");
+      }
+      
       const { data, error } = await supabase.functions.invoke('meeting-export', {
         body: { 
-          transcriptId: currentTranscript[0]?.transcript_id,
+          transcriptId,
           exportType: tool,
           addSummary: true
         }

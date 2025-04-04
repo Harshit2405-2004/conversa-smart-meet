@@ -163,7 +163,7 @@ serve(async (req) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${/* This would be the user's OAuth token */}`
+              'Authorization': `Bearer TOKEN_PLACEHOLDER` // Fixed the syntax error
             },
             body: JSON.stringify({
               title: `Meeting: ${transcript.title}`,
@@ -212,7 +212,7 @@ serve(async (req) => {
               'Notion-Version': '2022-06-28'
             },
             body: JSON.stringify({
-              parent: { database_id: '/* Database ID would be configured or provided by user */' },
+              parent: { database_id: 'DATABASE_ID_PLACEHOLDER' },
               properties: {
                 title: {
                   title: [
