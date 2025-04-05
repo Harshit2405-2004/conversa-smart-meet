@@ -1,3 +1,4 @@
+
 import { SpeechRecognitionResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,14 +16,6 @@ interface SpeechRecognition extends EventTarget {
 
 interface SpeechRecognitionConstructor {
   new(): SpeechRecognition;
-}
-
-// Add SpeechRecognition TypeScript declarations
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
 }
 
 // Define the SpeechRecognition event interfaces
@@ -43,6 +36,15 @@ interface SpeechRecognitionEvent extends Event {
     };
     length: number;
   };
+}
+
+// Add SpeechRecognition TypeScript declarations
+// Using a different approach to avoid duplicate declaration errors
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
 }
 
 // Speech recognition singleton
