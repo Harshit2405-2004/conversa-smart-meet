@@ -12,7 +12,7 @@ declare global {
 
   interface SpeechRecognitionResultList {
     [index: number]: SpeechRecognitionResult;
-    length: number;
+    readonly length: number;
   }
 
   interface SpeechRecognitionErrorEvent extends Event {
