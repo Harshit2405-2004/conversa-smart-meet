@@ -1,16 +1,31 @@
-
 import { SpeechRecognitionResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+
+// Define SpeechRecognition interfaces for TypeScript
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionConstructor {
+  new(): SpeechRecognition;
+}
 
 // Add SpeechRecognition TypeScript declarations
 declare global {
   interface Window {
-    SpeechRecognition?: typeof SpeechRecognition;
-    webkitSpeechRecognition?: typeof SpeechRecognition;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
 
-// Define the SpeechRecognition interface if it's not defined
+// Define the SpeechRecognition event interfaces
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
