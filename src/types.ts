@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -41,23 +40,11 @@ export interface Profile {
   remaining_ai_queries: number;
 }
 
-// Speech-to-text types
+// Update the SpeechRecognitionResult type if it already exists, or add it if it doesn't
 export interface SpeechRecognitionResult {
   transcript: string;
   confidence: number;
   isFinal: boolean;
   speaker?: string;
   timestamp?: string;
-}
-
-// Extension messaging types
-export interface ExtensionMessage {
-  action: string;
-  data?: any;
-}
-
-export interface ExtensionResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
 }
