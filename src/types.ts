@@ -12,7 +12,7 @@ export interface TranscriptSegment {
   speaker: string;
   text: string;
   timestamp: string;
-  transcript_id: string; // Now this is a required property
+  transcript_id: string;
 }
 
 export interface Transcript {
@@ -28,6 +28,8 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date | string;
+  transcript_id?: string;
+  user_id?: string;
 }
 
 export interface Profile {
@@ -37,4 +39,25 @@ export interface Profile {
   plan: 'free' | 'premium';
   remaining_transcription: number;
   remaining_ai_queries: number;
+}
+
+// Speech-to-text types
+export interface SpeechRecognitionResult {
+  transcript: string;
+  confidence: number;
+  isFinal: boolean;
+  speaker?: string;
+  timestamp?: string;
+}
+
+// Extension messaging types
+export interface ExtensionMessage {
+  action: string;
+  data?: any;
+}
+
+export interface ExtensionResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
 }

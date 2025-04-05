@@ -1,49 +1,23 @@
 
 project_id = "bwxvudskpkzzfrohntaq"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
+[functions.process-assistant-query]
+verify_jwt = true
 
-[db]
-port = 54322
+[functions.vertex-ai-assistant]
+verify_jwt = true
 
-[studio]
-enabled = true
-port = 54323
-api_url = "http://localhost"
+[functions.meeting-export]
+verify_jwt = true
 
-[inbucket]
-enabled = true
-port = 54324
+[functions.google-transcribe]
+verify_jwt = true
 
-[storage]
-enabled = true
+[functions.multi-language-transcribe]
+verify_jwt = true
 
-[realtime]
-enabled = true
+[functions.check-subscription]
+verify_jwt = true
 
-[edge_functions]
-[edge_functions.process-assistant-query]
-
-[edge_functions.google-transcribe]
-
-[edge_functions.vertex-ai-assistant]
-
-[edge_functions.create-subscription]
-
-[edge_functions.check-subscription]
-
-[edge_functions.stripe-webhook]
-verify_jwt = false
-
-[edge_functions.oauth2-token]
-
-[edge_functions.multi-language-transcribe]
-
-[edge_functions.analytics-insights]
-
-[edge_functions.meeting-export]
-
-[edge_functions.compatibility-check]
+[functions.analytics-insights]
+verify_jwt = true

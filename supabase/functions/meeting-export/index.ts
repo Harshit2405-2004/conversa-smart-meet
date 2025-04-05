@@ -27,254 +27,130 @@ serve(async (req) => {
     );
 
     // Get the user from the request
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
 
     if (!user) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized' }), 
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get the request parameters
+    // Get the request body
     const { transcriptId, exportType, addSummary } = await req.json();
-    
+
     if (!transcriptId) {
       return new Response(
-        JSON.stringify({ error: 'Missing transcript ID' }),
+        JSON.stringify({ error: 'Missing transcriptId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!['googleDocs', 'notion'].includes(exportType)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid export type. Must be "googleDocs" or "notion"' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Fetch the transcript data
+    // Get the transcript
     const { data: transcript, error: transcriptError } = await supabaseClient
       .from('transcripts')
-      .select(`
-        id,
-        title,
-        date,
-        duration,
-        transcript_segments (
-          speaker,
-          text,
-          timestamp
-        )
-      `)
+      .select('title, date')
       .eq('id', transcriptId)
       .single();
-    
-    if (transcriptError || !transcript) {
-      console.error('Error fetching transcript:', transcriptError);
+
+    if (transcriptError) {
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch transcript data' }),
+        JSON.stringify({ error: 'Failed to fetch transcript' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check if the transcript belongs to the user
-    if (transcript.user_id !== user.id) {
+    // Get the transcript segments
+    const { data: segments, error: segmentsError } = await supabaseClient
+      .from('transcript_segments')
+      .select('speaker, text, timestamp')
+      .eq('transcript_id', transcriptId)
+      .order('timestamp', { ascending: true });
+
+    if (segmentsError) {
       return new Response(
-        JSON.stringify({ error: 'You do not have permission to export this transcript' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to fetch transcript segments' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Format transcript data
+    const transcriptTitle = transcript.title;
+    const transcriptDate = new Date(transcript.date).toLocaleDateString();
+    const formattedTranscript = segments.map(segment => 
+      `[${segment.timestamp}] ${segment.speaker}: ${segment.text}`
+    ).join('\n\n');
 
     // Generate a summary if requested
     let summary = '';
     if (addSummary) {
-      summary = await generateSummary(transcript);
+      // Call Vertex AI for summary generation
+      try {
+        const { data: summaryData, error: summaryError } = await supabaseClient.functions.invoke('vertex-ai-assistant', {
+          body: { 
+            query: "Please provide a concise summary of this meeting transcript", 
+            transcriptId 
+          }
+        });
+
+        if (!summaryError && summaryData?.message?.text) {
+          summary = summaryData.message.text;
+        }
+      } catch (err) {
+        console.error('Error generating summary:', err);
+        // Continue without summary if there's an error
+      }
     }
 
-    // Export based on the requested type
-    let exportResult;
+    // Handle export based on exportType
+    let exportUrl = '';
+    let message = '';
+
     if (exportType === 'googleDocs') {
-      exportResult = await exportToGoogleDocs(transcript, summary, user.id);
-    } else {
-      exportResult = await exportToNotion(transcript, summary, user.id);
+      // Mock Google Docs export for now
+      // In a real implementation, we would use Google Docs API
+      exportUrl = `https://docs.google.com/document/create`;
+      message = 'Your transcript has been exported to Google Docs. A new document will open where you can paste the content.';
+    } 
+    else if (exportType === 'notion') {
+      // Mock Notion export for now
+      // In a real implementation, we would use Notion API
+      exportUrl = `https://www.notion.so/new`;
+      message = 'Your transcript has been exported to Notion. A new page will open where you can paste the content.';
+    }
+    else {
+      exportUrl = '';
+      message = 'Transcript exported successfully.';
     }
 
+    // Create export content
+    const exportContent = `
+# ${transcriptTitle}
+Date: ${transcriptDate}
+
+${summary ? `## Summary\n${summary}\n\n` : ''}
+## Transcript
+${formattedTranscript}
+    `.trim();
+
+    // For now, return the content directly
+    // In a real implementation, we would use the respective APIs
     return new Response(
-      JSON.stringify(exportResult),
+      JSON.stringify({ 
+        exportUrl,
+        message,
+        content: exportContent,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
-    console.error('Error in meeting-export function:', error);
+    console.error('Error in meeting-export:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
-
-// Generate a summary of the transcript using AI
-async function generateSummary(transcript) {
-  try {
-    // Concatenate the transcript text
-    const transcriptText = transcript.transcript_segments
-      .map(segment => `${segment.speaker}: ${segment.text}`)
-      .join('\n');
-    
-    // Use an AI service to generate a summary
-    // This is a placeholder - in production, you would call an AI service like OpenAI
-    return `This is a summary of the meeting "${transcript.title}" that took place on ${new Date(transcript.date).toLocaleDateString()}. The meeting lasted approximately ${transcript.duration} minutes.`;
-  } catch (error) {
-    console.error('Error generating summary:', error);
-    return '';
-  }
-}
-
-// Export the transcript to Google Docs
-async function exportToGoogleDocs(transcript, summary, userId) {
-  try {
-    // In a real implementation, this would use the Google Docs API to create a document
-    // For this demo, we'll simulate the export
-    
-    const documentTitle = `Meeting Transcript: ${transcript.title} - ${new Date(transcript.date).toLocaleDateString()}`;
-    
-    const documentContent = formatDocumentContent(transcript, summary);
-    
-    // Simulate API request to Google Docs
-    // In a real implementation, you would use the OAuth token from the user's session
-    // to authenticate with the Google Docs API
-    const mockGoogleDocsResponse = {
-      documentId: `doc-${Math.random().toString(36).substring(2, 11)}`,
-      title: documentTitle,
-      url: `https://docs.google.com/document/d/mock-id/edit`
-    };
-    
-    // Log the export for analytics
-    await logExport(userId, transcript.id, 'googleDocs');
-    
-    return {
-      success: true,
-      message: `Transcript successfully exported to Google Docs: "${documentTitle}"`,
-      exportUrl: mockGoogleDocsResponse.url
-    };
-  } catch (error) {
-    console.error('Error exporting to Google Docs:', error);
-    throw new Error('Failed to export to Google Docs');
-  }
-}
-
-// Export the transcript to Notion
-async function exportToNotion(transcript, summary, userId) {
-  try {
-    // In a real implementation, this would use the Notion API to create a page
-    // For this demo, we'll simulate the export
-    
-    const pageTitle = `Meeting Transcript: ${transcript.title} - ${new Date(transcript.date).toLocaleDateString()}`;
-    
-    const pageContent = formatNotionContent(transcript, summary);
-    
-    // Simulate API request to Notion
-    // In a real implementation, you would use an integration token to authenticate with the Notion API
-    const mockNotionResponse = {
-      pageId: `page-${Math.random().toString(36).substring(2, 11)}`,
-      title: pageTitle,
-      url: `https://notion.so/mock-id`
-    };
-    
-    // Log the export for analytics
-    await logExport(userId, transcript.id, 'notion');
-    
-    return {
-      success: true,
-      message: `Transcript successfully exported to Notion: "${pageTitle}"`,
-      exportUrl: mockNotionResponse.url
-    };
-  } catch (error) {
-    console.error('Error exporting to Notion:', error);
-    throw new Error('Failed to export to Notion');
-  }
-}
-
-// Format content for Google Docs
-function formatDocumentContent(transcript, summary) {
-  let content = '';
-  
-  // Add title and date
-  content += `# ${transcript.title}\n\n`;
-  content += `Date: ${new Date(transcript.date).toLocaleDateString()}\n`;
-  content += `Duration: ${transcript.duration} minutes\n\n`;
-  
-  // Add summary if available
-  if (summary) {
-    content += `## Summary\n\n${summary}\n\n`;
-  }
-  
-  // Add transcript
-  content += `## Transcript\n\n`;
-  transcript.transcript_segments.forEach(segment => {
-    content += `[${segment.timestamp}] ${segment.speaker}: ${segment.text}\n\n`;
-  });
-  
-  return content;
-}
-
-// Format content for Notion
-function formatNotionContent(transcript, summary) {
-  // For Notion, we would structure the content into blocks
-  // This is a simplified example
-  const blocks = [
-    {
-      type: 'heading_1',
-      content: transcript.title
-    },
-    {
-      type: 'paragraph',
-      content: `Date: ${new Date(transcript.date).toLocaleDateString()}`
-    },
-    {
-      type: 'paragraph',
-      content: `Duration: ${transcript.duration} minutes`
-    }
-  ];
-  
-  // Add summary if available
-  if (summary) {
-    blocks.push(
-      {
-        type: 'heading_2',
-        content: 'Summary'
-      },
-      {
-        type: 'paragraph',
-        content: summary
-      }
-    );
-  }
-  
-  // Add transcript
-  blocks.push({
-    type: 'heading_2',
-    content: 'Transcript'
-  });
-  
-  transcript.transcript_segments.forEach(segment => {
-    blocks.push({
-      type: 'paragraph',
-      content: `[${segment.timestamp}] ${segment.speaker}: ${segment.text}`
-    });
-  });
-  
-  return blocks;
-}
-
-// Log the export for analytics
-async function logExport(userId, transcriptId, exportType) {
-  try {
-    // In a real implementation, this would log to a database
-    console.log(`Export logged: User ${userId} exported transcript ${transcriptId} to ${exportType}`);
-    return true;
-  } catch (error) {
-    console.error('Error logging export:', error);
-    return false;
-  }
-}
