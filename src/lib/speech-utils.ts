@@ -29,11 +29,12 @@ declare global {
     onend: () => void;
   }
 
+  // SpeechRecognition constructor
   interface SpeechRecognitionConstructor {
     new(): SpeechRecognition;
   }
 
-  // Window interface augmentation (add these properties to Window)
+  // Window interface augmentation
   interface Window {
     SpeechRecognition?: SpeechRecognitionConstructor;
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
