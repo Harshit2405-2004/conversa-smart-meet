@@ -27,7 +27,7 @@ declare global {
     stop(): void;
     onresult: (event: SpeechRecognitionEvent) => void;
     onerror: (event: SpeechRecognitionErrorEvent) => void;
-    onend: () => void;  // Add the missing onend property
+    onend: () => void;
   }
 
   // SpeechRecognition constructor
