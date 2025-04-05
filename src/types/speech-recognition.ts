@@ -33,7 +33,7 @@ declare global {
     stop(): void;
     onresult: (event: SpeechRecognitionEvent) => void;
     onerror: (event: SpeechRecognitionErrorEvent) => void;
-    onend: () => void; // This was the missing property causing the error
+    onend: () => void; // Explicitly define onend property
   }
 
   // SpeechRecognition constructor
