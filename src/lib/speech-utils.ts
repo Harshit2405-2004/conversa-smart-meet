@@ -2,9 +2,37 @@
 import { SpeechRecognitionResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
+// Add SpeechRecognition TypeScript declarations
+declare global {
+  interface Window {
+    SpeechRecognition?: typeof SpeechRecognition;
+    webkitSpeechRecognition?: typeof SpeechRecognition;
+  }
+}
+
+// Define the SpeechRecognition interface if it's not defined
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+        confidence: number;
+      };
+      isFinal: boolean;
+      length: number;
+    };
+    length: number;
+  };
+}
+
 // Speech recognition singleton
 class SpeechRecognitionService {
-  private recognition: SpeechRecognition | null = null;
+  private recognition: any = null;
   private isListening: boolean = false;
   private onResultCallback: ((result: SpeechRecognitionResult) => void) | null = null;
   private onErrorCallback: ((error: string) => void) | null = null;
@@ -12,10 +40,12 @@ class SpeechRecognitionService {
   
   constructor() {
     // Check browser support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      this.recognition = new SpeechRecognition();
-      this.configureRecognition();
+    if (typeof window !== 'undefined') {
+      const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognitionImpl) {
+        this.recognition = new SpeechRecognitionImpl();
+        this.configureRecognition();
+      }
     }
   }
   
@@ -26,7 +56,7 @@ class SpeechRecognitionService {
     this.recognition.interimResults = true;
     this.recognition.lang = this.language;
     
-    this.recognition.onresult = (event) => {
+    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (this.onResultCallback) {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
@@ -40,7 +70,7 @@ class SpeechRecognitionService {
       }
     };
     
-    this.recognition.onerror = (event) => {
+    this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (this.onErrorCallback) {
         this.onErrorCallback(event.error);
       }
@@ -169,12 +199,4 @@ export async function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-}
-
-// Define interface for custom SpeechRecognition
-declare global {
-  interface Window {
-    SpeechRecognition?: typeof SpeechRecognition;
-    webkitSpeechRecognition?: typeof SpeechRecognition;
-  }
 }

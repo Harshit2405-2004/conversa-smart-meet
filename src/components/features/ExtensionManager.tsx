@@ -5,6 +5,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, AlertCircle, Download, Chrome } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Declare chrome API types for TypeScript
+declare global {
+  interface Window {
+    chrome?: {
+      runtime?: {
+        sendMessage: (extensionId: string, message: any) => Promise<any>;
+      };
+    };
+  }
+}
+
 const EXTENSION_ID = "meetassist-extension"; // Replace with your actual extension ID when published
 
 export function ExtensionManager() {
@@ -21,9 +32,9 @@ export function ExtensionManager() {
     try {
       // Try to send a message to the extension
       // Only works if extension is installed
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
+      if (typeof window !== 'undefined' && window.chrome?.runtime) {
         try {
-          await chrome.runtime.sendMessage(EXTENSION_ID, { action: 'ping' });
+          await window.chrome.runtime.sendMessage(EXTENSION_ID, { action: 'ping' });
           setIsInstalled(true);
         } catch (e) {
           setIsInstalled(false);
