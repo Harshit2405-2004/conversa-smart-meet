@@ -1,46 +1,44 @@
-
 import { SpeechRecognitionResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define SpeechRecognition interfaces for TypeScript
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionConstructor {
-  new(): SpeechRecognition;
-}
-
-// Define the SpeechRecognition event interfaces
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: {
-    [index: number]: {
+// Define a single global declaration block with all needed types
+declare global {
+  // SpeechRecognition API interfaces
+  interface SpeechRecognitionEvent extends Event {
+    resultIndex: number;
+    results: {
       [index: number]: {
-        transcript: string;
-        confidence: number;
+        [index: number]: {
+          transcript: string;
+          confidence: number;
+        };
+        isFinal: boolean;
+        length: number;
       };
-      isFinal: boolean;
       length: number;
     };
-    length: number;
-  };
-}
+  }
 
-// Add SpeechRecognition TypeScript declarations
-// Using a different approach to avoid duplicate declaration errors
-declare global {
+  interface SpeechRecognitionErrorEvent extends Event {
+    error: string;
+  }
+
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start(): void;
+    stop(): void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: SpeechRecognitionErrorEvent) => void;
+    onend: () => void;
+  }
+
+  interface SpeechRecognitionConstructor {
+    new(): SpeechRecognition;
+  }
+
+  // Window interface augmentation (add these properties to Window)
   interface Window {
     SpeechRecognition?: SpeechRecognitionConstructor;
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
