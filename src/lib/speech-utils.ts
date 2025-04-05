@@ -1,3 +1,4 @@
+
 import { SpeechRecognitionResult } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,20 +31,21 @@ declare global {
   }
 
   // SpeechRecognition constructor
-  interface SpeechRecognitionConstructor {
+  var SpeechRecognition: {
+    prototype: SpeechRecognition;
     new(): SpeechRecognition;
-  }
+  };
 
-  // Window interface augmentation
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
+  // Webkit prefix for Safari
+  var webkitSpeechRecognition: {
+    prototype: SpeechRecognition;
+    new(): SpeechRecognition;
+  };
 }
 
 // Speech recognition singleton
 class SpeechRecognitionService {
-  private recognition: any = null;
+  private recognition: SpeechRecognition | null = null;
   private isListening: boolean = false;
   private onResultCallback: ((result: SpeechRecognitionResult) => void) | null = null;
   private onErrorCallback: ((error: string) => void) | null = null;
