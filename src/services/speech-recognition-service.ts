@@ -1,4 +1,3 @@
-
 import { SpeechRecognitionResult } from "@/types";
 
 class SpeechRecognitionService {
@@ -11,7 +10,9 @@ class SpeechRecognitionService {
   constructor() {
     // Check browser support
     if (typeof window !== 'undefined') {
-      const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognitionImpl = (window.SpeechRecognition || window.webkitSpeechRecognition) as {
+        new(): SpeechRecognition;
+      };
       if (SpeechRecognitionImpl) {
         this.recognition = new SpeechRecognitionImpl();
         this.configureRecognition();
@@ -25,6 +26,13 @@ class SpeechRecognitionService {
     this.recognition.continuous = true;
     this.recognition.interimResults = true;
     this.recognition.lang = this.language;
+    
+    this.recognition.onend = () => {
+      if (this.isListening) {
+        // Restart recognition if it was stopped unexpectedly
+        this.recognition?.start();
+      }
+    };
     
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (this.onResultCallback) {
@@ -45,13 +53,6 @@ class SpeechRecognitionService {
         this.onErrorCallback(event.error);
       }
       console.error('Speech recognition error:', event.error);
-    };
-    
-    this.recognition.onend = () => {
-      if (this.isListening) {
-        // Restart if we're supposed to be listening
-        this.recognition?.start();
-      }
     };
   }
   
