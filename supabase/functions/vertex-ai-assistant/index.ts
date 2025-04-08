@@ -132,7 +132,7 @@ serve(async (req) => {
     // Construct a transcript text for processing
     const transcriptText = segments.map(s => `${s.speaker}: ${s.text}`).join('\n');
     
-    // Call Google's Gemini API instead of Vertex AI
+    // Call Google's Gemini API
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
