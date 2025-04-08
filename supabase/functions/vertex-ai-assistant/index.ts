@@ -81,11 +81,11 @@ serve(async (req) => {
       );
     }
 
-    // Access the Google Cloud API key
-    const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
+    // Access the dedicated Gemini API key
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'Google Cloud API key not configured' }),
+        JSON.stringify({ error: 'Gemini API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -189,29 +189,35 @@ serve(async (req) => {
     let enhancedResponse = aiResponse;
     if (query.toLowerCase().includes('summary') || query.toLowerCase().includes('summarize')) {
       try {
-        const nlpResponse = await fetch(
-          `https://language.googleapis.com/v1/documents:analyzeSentiment?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              document: {
-                type: 'PLAIN_TEXT',
-                content: transcriptText
-              }
-            })
-          }
-        );
+        // Note: We're still using the GOOGLE_CLOUD_API_KEY for the Natural Language API,
+        // as it's a different service from Gemini AI
+        const nlpApiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
         
-        if (nlpResponse.ok) {
-          const nlpData = await nlpResponse.json();
-          const sentimentScore = nlpData.documentSentiment.score;
-          const sentimentMagnitude = nlpData.documentSentiment.magnitude;
+        if (nlpApiKey) {
+          const nlpResponse = await fetch(
+            `https://language.googleapis.com/v1/documents:analyzeSentiment?key=${nlpApiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                document: {
+                  type: 'PLAIN_TEXT',
+                  content: transcriptText
+                }
+              })
+            }
+          );
           
-          const sentiment = sentimentScore > 0.25 ? "positive" :
+          if (nlpResponse.ok) {
+            const nlpData = await nlpResponse.json();
+            const sentimentScore = nlpData.documentSentiment.score;
+            const sentimentMagnitude = nlpData.documentSentiment.magnitude;
+            
+            const sentiment = sentimentScore > 0.25 ? "positive" :
                           sentimentScore < -0.25 ? "negative" : "neutral";
                           
-          enhancedResponse += `\n\nOverall meeting sentiment: ${sentiment} (confidence: ${(Math.abs(sentimentScore) * 100).toFixed(1)}%, intensity: ${(sentimentMagnitude * 100).toFixed(1)}%)`;
+            enhancedResponse += `\n\nOverall meeting sentiment: ${sentiment} (confidence: ${(Math.abs(sentimentScore) * 100).toFixed(1)}%, intensity: ${(sentimentMagnitude * 100).toFixed(1)}%)`;
+          }
         }
       } catch (nlpError) {
         console.error('Natural Language API error:', nlpError);
