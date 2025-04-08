@@ -132,33 +132,38 @@ serve(async (req) => {
     // Construct a transcript text for processing
     const transcriptText = segments.map(s => `${s.speaker}: ${s.text}`).join('\n');
     
-    // Call Google's Vertex AI API
-    // Using generateText API with PaLM 2 text model
-    const vertexAIResponse = await fetch(
-      `https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/text-bison:predict?key=${apiKey}`,
+    // Call Google's Gemini API instead of Vertex AI
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{
-            content: `
-              You are an AI assistant that helps users analyze meeting transcripts.
-              
-              TRANSCRIPT:
-              ${transcriptText}
-              
-              MEETING INFO:
-              Title: ${transcript.title}
-              Date: ${transcript.date}
-              Duration: ${transcript.duration} minutes
-              
-              USER QUERY:
-              ${query}
-              
-              Provide a helpful and informative response addressing the user's query based on the transcript content.
-            `
-          }],
-          parameters: {
+          contents: [
+            {
+              parts: [
+                {
+                  text: `
+                    You are an AI assistant that helps users analyze meeting transcripts.
+                    
+                    TRANSCRIPT:
+                    ${transcriptText}
+                    
+                    MEETING INFO:
+                    Title: ${transcript.title}
+                    Date: ${transcript.date}
+                    Duration: ${transcript.duration} minutes
+                    
+                    USER QUERY:
+                    ${query}
+                    
+                    Provide a helpful and informative response addressing the user's query based on the transcript content.
+                  `
+                }
+              ]
+            }
+          ],
+          generationConfig: {
             temperature: 0.2,
             maxOutputTokens: 1024,
             topK: 40,
@@ -168,17 +173,17 @@ serve(async (req) => {
       }
     );
 
-    if (!vertexAIResponse.ok) {
-      const errorData = await vertexAIResponse.json();
-      console.error('Vertex AI API error:', errorData);
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.json();
+      console.error('Gemini API error:', errorData);
       return new Response(
-        JSON.stringify({ error: 'Failed to process query with Vertex AI' }),
-        { status: vertexAIResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to process query with Gemini AI' }),
+        { status: geminiResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const aiData = await vertexAIResponse.json();
-    const aiResponse = aiData.predictions[0].content;
+    const aiData = await geminiResponse.json();
+    const aiResponse = aiData.candidates[0].content.parts[0].text;
 
     // Optional: If query is about summarizing, also use Natural Language API
     let enhancedResponse = aiResponse;
@@ -249,7 +254,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in vertex-ai-assistant function:', error);
+    console.error('Error in gemini-assistant function:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

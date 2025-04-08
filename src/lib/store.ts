@@ -178,7 +178,7 @@ export const useStore = create<AppState>((set, get) => ({
         }]
       }));
 
-      // Call the Google Vertex AI edge function
+      // Call the Google Gemini edge function (using the same endpoint name for compatibility)
       const { data, error } = await supabase.functions.invoke('vertex-ai-assistant', {
         body: { 
           query: message, 

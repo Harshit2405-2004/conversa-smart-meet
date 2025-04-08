@@ -79,7 +79,7 @@ export function AIAssistant() {
           <div>
             <CardTitle>AI Assistant</CardTitle>
             <CardDescription>
-              Powered by Google Vertex AI
+              Powered by Google Gemini AI
             </CardDescription>
           </div>
           {user && (

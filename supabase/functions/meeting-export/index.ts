@@ -86,7 +86,7 @@ serve(async (req) => {
     // Generate a summary if requested
     let summary = '';
     if (addSummary) {
-      // Call Vertex AI for summary generation
+      // Call Gemini AI for summary generation
       try {
         const { data: summaryData, error: summaryError } = await supabaseClient.functions.invoke('vertex-ai-assistant', {
           body: { 
